@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#060911">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Apex Trade Pro</title>
+  <link rel="manifest" href="./manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060911;
+      --card: rgba(17, 24, 39, 0.85);
+      --card-solid: #111827;
+      --border: rgba(255, 255, 255, 0.08);
+      --neon-green: #00f59b;
+      --neon-red: #ff2a5f;
+      --neon-blue: #00d2ff;
+      --neon-amber: #ffb800;
+      --neon-purple: #a855f7;
+      --text: #f8fafc;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.08) 0%, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 12px 12px 90px 12px;
+      display: flex;
+      justify-content: center;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; direction: ltr; display: inline-block; }
+    .app { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* الهيدر العلوي */
+    .top-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-badge {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #000;
+      box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    }
+    .logo-text h1 { font-size: 17px; font-weight: 900; letter-spacing: 0.5px; line-height: 1.1; }
+    .logo-text span { font-size: 10px; color: var(--neon-green); font-weight: 700; }
+    .btn-install {
+      display: none; background: linear-gradient(90deg, var(--neon-green), #059669);
+      color: #000; border: none; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11px; cursor: pointer;
+    }
+
+    /* بطاقة الحساب الممول الدائمة (Prop Guardian Bar) */
+    .prop-guardian {
+      background: linear-gradient(160deg, #111827 0%, #0b101b 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    }
+    .prop-guardian::before {
+      content: ''; position: absolute; top: 0; right: 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+    }
+    .prop-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .bal-label { font-size: 11px; color: var(--muted); font-weight: 700; }
+    .bal-value { font-size: 26px; font-weight: 800; color: #fff; }
+    .pnl-pill { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 800; }
+    .pnl-pos { background: rgba(0, 245, 155, 0.15); color: var(--neon-green); }
+    .pnl-neg { background: rgba(255, 42, 95, 0.15); color: var(--neon-red); }
+
+    .dd-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dd-item { background: rgba(0,0,0,0.35); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); }
+    .dd-head { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
+    .dd-title { color: var(--muted); font-weight: 700; }
+    .progress-track { width: 100%; height: 6px; background: #1e293b; border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 10px; transition: 0.4s; }
+
+    /* الأقسام (Views) */
+    .view-section { display: none; flex-direction: column; gap: 14px; animation: fadeIn 0.2s ease; }
+    .view-section.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glass-card {
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: 18px; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .card-title { font-size: 14px; font-weight: 800; color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+
+    /* شبكة الإحصائيات (Dashboard) */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-tile { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .stat-tile .lbl { font-size: 11px; color: var(--muted); font-weight: 700; }
+    .stat-tile .val { font-size: 20px; font-weight: 800; margin-top: 4px; }
+    .stat-tile .sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* حاسبة اللوت */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .input-box { display: flex; flex-direction: column; gap: 4px; }
+    .input-box label { font-size: 11px; color: var(--muted); font-weight: 700; }
+    input, select, textarea {
+      background: #090d16; border: 1px solid #1e293b; color: #fff;
+      padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; outline: none; width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--neon-blue); }
+
+    .lot-result-box {
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.12), rgba(168, 85, 247, 0.12));
+      border: 1px solid rgba(0, 210, 255, 0.35); border-radius: 16px; padding: 16px; text-align: center;
+    }
+    .lot-big { font-size: 34px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 20px rgba(0,210,255,0.4); }
+    .risk-warn { color: var(--neon-red); font-size: 12px; font-weight: 800; margin-top: 6px; display: none; }
+
+    /* التسجيل الصوتي والـ Journal */
+    .voice-box {
+      background: radial-gradient(circle at center, rgba(168, 85, 247, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+      border: 1px dashed rgba(168, 85, 247, 0.4); border-radius: 18px; padding: 18px; text-align: center;
+    }
+    .prompt-guide { font-size: 12px; color: var(--neon-amber); font-weight: 700; margin-bottom: 10px; }
+    .mic-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+      color: #fff; font-size: 28px; cursor: pointer; margin: 6px auto;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.5); transition: 0.2s;
+    }
+    .mic-btn.recording { background: var(--neon-red); box-shadow: 0 0 35px var(--neon-red); animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+    .tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag-chip {
+      padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800;
+      background: #090d16; border: 1px solid #1e293b; color: var(--muted); cursor: pointer; transition: 0.15s;
+    }
+    .tag-chip.selected-bad { background: rgba(255, 42, 95, 0.2); border-color: var(--neon-red); color: var(--neon-red); }
+    .tag-chip.selected-good { background: rgba(0, 245, 155, 0.2); border-color: var(--neon-green); color: var(--neon-green); }
+
+    .btn-action {
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; width: 100%;
+    }
+
+    /* سجل الصفقات */
+    .trade-item {
+      background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 14px;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .trade-top { display: flex; justify-content: space-between; align-items: center; }
+    .pair-badge { font-weight: 900; font-size: 14px; color: #fff; }
+    .dir-buy { color: var(--neon-green); font-size: 11px; background: rgba(0,245,155,0.1); padding: 2px 8px; border-radius: 6px; }
+    .dir-sell { color: var(--neon-red); font-size: 11px; background: rgba(255,42,95,0.1); padding: 2px 8px; border-radius: 6px; }
+    .trade-note { font-size: 12px; color: #cbd5e1; line-height: 1.5; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; }
+    .chart-thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); margin-top: 4px; }
+
+    /* شريط التنقل السفلي (Bottom App Bar) */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(11, 16, 27, 0.95); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; padding: 8px 10px 14px; z-index: 100;
+      max-width: 480px; margin: 0 auto;
+    }
+    .nav-item {
+      background: transparent; border: none; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 700; cursor: pointer; flex: 1;
+    }
+    .nav-item span.icon { font-size: 20px; transition: 0.2s; }
+    .nav-item.active { color: var(--neon-blue); }
+    .nav-item.active span.icon { transform: translateY(-2px); filter: drop-shadow(0 0 8px var(--neon-blue)); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- الهيدر -->
+  <div class="top-header">
+    <div class="logo-area">
+      <div class="logo-badge">⚡</div>
+      <div class="logo-text">
+        <h1>APEX TRADER PRO</h1>
+        <span>● PROP FIRM & VOICE AI</span>
+      </div>
+    </div>
+    <button class="btn-install" id="installBtn" onclick="installPWA()">📲 تثبيت التطبيق</button>
+  </div>
+
+  <!-- شريط حارس الحساب الممول الدائم -->
+  <div class="prop-guardian">
+    <div class="prop-top">
+      <div>
+        <div class="bal-label">رصيد الحساب الممول (EQUITY)</div>
+        <div class="bal-value mono" id="uiCurrentBalance">$10,000.00</div>
+      </div>
+      <div class="pnl-pill pnl-pos mono" id="uiTotalPnl">+0.00%</div>
+    </div>
+    <div class="dd-bars">
+      <div class="dd-item">
+        <div class="dd-head">
+          <span class="dd-title">المتبقي اليومي (Daily DD)</span>
+          <span class="mono" id="uiDailyRem" style="color:var(--neon-green); font-weight:800;">$500</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="barDaily" style="width: 0%; background: var(--neon-green);"></div>
+        </div>
+      </div>
+      <div class="dd-item">
+        <div class="dd-head">
+          <span class="dd-title">المتبقي الكلي (Max DD)</span>
+          <span class="mono" id="uiMaxRem" style="color:var(--neon-blue); font-weight:800;">$1000</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="barMax" style="width: 0%; background: var(--neon-blue);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 1. قسم لوحة القيادة والإحصائيات ================= -->
+  <div class="view-section active" id="view-dash">
+    <div class="glass-card">
+      <div class="card-title">
+        <span>📊 رادار الأداء والـ Win Rate</span>
+        <span style="font-size:11px; color:var(--muted);" id="totalTradesCount">0 صفقات</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-tile">
+          <div class="lbl">WIN RATE العام</div>
+          <div class="val mono" id="statWinRate" style="color:var(--neon-blue);">0%</div>
+          <div class="sub" id="statWL">0W / 0L</div>
+        </div>
+        <div class="stat-tile">
+          <div class="lbl">WIN RATE الالتزام (A+)</div>
+          <div class="val mono" id="statAPlusRate" style="color:var(--neon-green);">0%</div>
+          <div class="sub">كي تحترم شروطك 100%</div>
+        </div>
+        <div class="stat-tile">
+          <div class="lbl">💸 ضريبة العاطفة (FOMO/Revenge)</div>
+          <div class="val mono" id="statEmotionCost" style="color:var(--neon-red);">$0</div>
+          <div class="sub">خسائر سببها التسرع والطمع</div>
+        </div>
+        <div class="stat-tile">
+          <div class="lbl">⏰ الجلسة الأفضل</div>
+          <div class="val" id="statBestSession" style="color:var(--neon-amber); font-size:15px;">غير محدد</div>
+          <div class="sub">حسب توقيت صفقاتك الرابحة</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">
+        <span>📜 آخر الصفقات المسجلة</span>
+        <button onclick="resetTodayPnl()" style="background:none; border:none; color:var(--neon-blue); font-size:11px; cursor:pointer; font-weight:700;">🔄 بداية يوم جديد</button>
+      </div>
+      <div id="tradesList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ================= 2. قسم حاسبة اللوت التكيفية ================= -->
+  <div class="view-section" id="view-calc">
+    <div class="glass-card">
+      <div class="card-title">🧮 حاسبة العقد الذكية (Lot Size Calculator)</div>
+      <div class="form-grid">
+        <div class="input-box">
+          <label>الأصل / الزوج (Pair)</label>
+          <select id="calcPair" onchange="calculateLot()">
+            <option value="XAUUSD">XAUUSD (الذهب)</option>
+            <option value="FX">EURUSD / GBPUSD (فوركس)</option>
+            <option value="INDICES">NAS100 / US30 (مؤشرات)</option>
+            <option value="BTC">BTCUSD (بيتكوين)</option>
+          </select>
+        </div>
+        <div class="input-box">
+          <label>المخاطرة (% من الرصيد)</label>
+          <input type="number" id="calcRiskPct" value="0.5" step="0.1" oninput="calculateLot()" class="mono">
+        </div>
+        <div class="input-box">
+          <label>الستوب لوس (بـ Pips / النقاط)</label>
+          <input type="number" id="calcSL" value="25" step="1" oninput="calculateLot()" class="mono">
+        </div>
+        <div class="input-box">
+          <label>الهدف (R:R Ratio)</label>
+          <input type="number" id="calcRR" value="2" step="0.5" oninput="calculateLot()" class="mono">
+        </div>
+      </div>
+
+      <div class="lot-result-box">
+        <div style="font-size:11px; color:var(--muted); font-weight:700;">حجم اللوت الموصى به (LOT SIZE)</div>
+        <div class="lot-big mono" id="resLotSize">0.20</div>
+        <div style="display:flex; justify-content:space-around; margin-top:10px; font-size:12px;">
+          <span>المخاطرة: <strong class="mono" style="color:var(--neon-red);" id="resRiskUsd">-$50</strong></span>
+          <span>الربح المتوقع: <strong class="mono" style="color:var(--neon-green);" id="resRewardUsd">+$100</strong></span>
+        </div>
+        <div class="risk-warn" id="lotWarning">🚨 حذاري! هاد الصفقة تقيس حد الخسارة اليومي (Daily DD)!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3. قسم التسجيل الصوتي والـ Journal ================= -->
+  <div class="view-section" id="view-journal">
+    <div class="glass-card">
+      <div class="card-title">🎙️ عقد الصفقة الصوتي (Voice Journal)</div>
+      
+      <div class="voice-box">
+        <div class="prompt-guide" id="voicePromptText">💡 اهدر: علاش دخلت؟ وين الستوب؟ وكيفاش راهي نفسيتك؟</div>
+        <button class="mic-btn" id="journalMicBtn" onclick="toggleJournalVoice()">🎤</button>
+        <div style="font-size:12px; color:var(--text); font-weight:700;" id="voiceStatus">اكليكي وسجل تبرير الصفقة بالصوت</div>
+        <div style="font-size:11px; color:var(--neon-amber); margin-top:4px;" id="stressBadge"></div>
+      </div>
+
+      <div class="form-grid">
+        <div class="input-box">
+          <label>الزوج</label>
+          <select id="jPair">
+            <option value="XAUUSD">XAUUSD (الذهب)</option>
+            <option value="NAS100">NAS100 (الناسداك)</option>
+            <option value="EURUSD">EURUSD (اليورو)</option>
+            <option value="US30">US30 (الداو جونز)</option>
+            <option value="GBPUSD">GBPUSD (الباوند)</option>
+          </select>
+        </div>
+        <div class="input-box">
+          <label>نوع الصفقة</label>
+          <select id="jDir">
+            <option value="BUY">🟢 BUY (شراء)</option>
+            <option value="SELL">🔴 SELL (بيع)</option>
+          </select>
+        </div>
+        <div class="input-box">
+          <label>النتيجة بالـ $ (موجب للربح / سالب للخسارة)</label>
+          <input type="number" id="jPnl" placeholder="مثال: 120 أو -50" class="mono">
+        </div>
+        <div class="input-box">
+          <label>الجلسة (Session)</label>
+          <select id="jSession">
+            <option value="لندن 🇬🇧">لندن 🇬🇧</option>
+            <option value="نيويورك 🇺🇸">نيويورك 🇺🇸</option>
+            <option value="آسيا 🇯🇵">آسيا 🇯🇵</option>
+            <option value="تداول ليلي 🌙">تداول ليلي 🌙</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-box">
+        <label>الملاحظة / التبرير الصوتي المكتوب</label>
+        <textarea id="jNotes" rows="2" placeholder="واش قلت بالمايك يخرج هنا، أو اكتب ملاحظتك..."></textarea>
+      </div>
+
+      <div class="input-box">
+        <label>🏷️ طاغ الانضباط أو الخطأ النفسي (إجباري):</label>
+        <div class="tags-wrap" id="tagsContainer">
+          <span class="tag-chip selected-good" onclick="selectTag(this, 'A+ Setup ✅', true)">A+ Setup (ملتزم 100%) ✅</span>
+          <span class="tag-chip" onclick="selectTag(this, 'FOMO (تسرع/طمع) 🔴', false)">FOMO (تسرع) 🔴</span>
+          <span class="tag-chip" onclick="selectTag(this, 'Revenge (انتقام) 😡', false)">Revenge (انتقام) 😡</span>
+          <span class="tag-chip" onclick="selectTag(this, 'Moved SL (حركت الستوب) ⚠️', false)">حركت الستوب ⚠️</span>
+          <span class="tag-chip" onclick="selectTag(this, 'Early Exit (خرجت بكري) 😨', false)">خرجت بكري (خوف) 😨</span>
+        </div>
+      </div>
+
+      <div class="input-box">
+        <label>📸 إرفاق صورة الشارت (اختياري)</label>
+        <input type="file" id="jChartImg" accept="image/*" onchange="encodeChartImage(this)">
+      </div>
+
+      <button class="btn-action" onclick="saveTrade()">💾 حفظ الصفقة وتحديث الحساب الممول</button>
+    </div>
+  </div>
+
+  <!-- ================= 4. قسم إعدادات الحساب الممول ================= -->
+  <div class="view-section" id="view-prop">
+    <div class="glass-card">
+      <div class="card-title">🛡️ إعدادات الحساب الممول (Prop Firm Setup)</div>
+      <div class="form-grid">
+        <div class="input-box">
+          <label>رأس المال الأولي ($)</label>
+          <input type="number" id="cfgStartBal" value="10000" class="mono">
+        </div>
+        <div class="input-box">
+          <label>الرصيد الحالي ($)</label>
+          <input type="number" id="cfgCurrBal" value="10000" class="mono">
+        </div>
+        <div class="input-box">
+          <label>أقصى خسارة يومية (% Daily DD)</label>
+          <input type="number" id="cfgDailyDD" value="5" step="0.5" class="mono">
+        </div>
+        <div class="input-box">
+          <label>أقصى خسارة كلية (% Max DD)</label>
+          <input type="number" id="cfgMaxDD" value="10" step="0.5" class="mono">
+        </div>
+      </div>
+      <button class="btn-action" onclick="savePropConfig()">تحديث قواعد الحساب الممول</button>
+      <button onclick="wipeAllData()" style="background:rgba(255,42,95,0.15); color:var(--neon-red); border:1px solid var(--neon-red); padding:10px; border-radius:12px; font-weight:800; cursor:pointer; margin-top:8px;">🗑️ فرمتة وتصفير جميع البيانات</button>
+    </div>
+  </div>
+</div>
+
+<!-- شريط التنقل السفلي -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('dash', this)">
+    <span class="icon">📊</span><span>الأداء</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('calc', this)">
+    <span class="icon">🧮</span><span>حاسبة اللوت</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('journal', this)">
+    <span class="icon">🎙️</span><span>تسجيل صفقة</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('prop', this)">
+    <span class="icon">🛡️</span><span>الحساب الممول</span>
+  </button>
+</nav>
+
+<script>
+  // تسجيل Service Worker باش يولي تطبيق Standalone حقيقي
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // زر تثبيت التطبيق المباشر (PWA Install Prompt)
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'block';
+  });
+
+  function installPWA() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
+      });
+    }
+  }
+
+  // قاعدة البيانات المحلية
+  let state = JSON.parse(localStorage.getItem('apex_trader_state')) || {
+    startBal: 10000,
+    currBal: 10000,
+    dailyDDPct: 5,
+    maxDDPct: 10,
+    todayPnl: 0,
+    trades: []
+  };
+
+  let currentTag = { name: 'A+ Setup ✅', isGood: true };
+  let tempChartBase64 = null;
+  let currentStress = "هادي ومتزن 🧘‍♂️";
+
+  function saveState() {
+    localStorage.setItem('apex_trader_state', JSON.stringify(state));
+    updateUI();
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('view-' + tabId).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (tabId === 'calc') calculateLot();
+  }
+
+  // تحديث شريط الحساب الممول والإحصائيات
+  function updateUI() {
+    const { startBal, currBal, dailyDDPct, maxDDPct, todayPnl, trades } = state;
+    document.getElementById('uiCurrentBalance').innerText = `$${currBal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    const totalPnlPct = (((currBal - startBal) / startBal) * 100).toFixed(2);
+    const pnlEl = document.getElementById('uiTotalPnl');
+    pnlEl.innerText = `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct}%`;
+    pnlEl.className = `pnl-pill mono ${totalPnlPct >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+
+    // حساب الـ Drawdown
+    const maxDailyLossUsd = startBal * (dailyDDPct / 100);
+    const currentDailyLoss = todayPnl < 0 ? Math.abs(todayPnl) : 0;
+    const remDaily = Math.max(0, maxDailyLossUsd - currentDailyLoss);
+    const dailyUsedPct = Math.min(100, (currentDailyLoss / maxDailyLossUsd) * 100);
+
+    const maxTotalLossUsd = startBal * (maxDDPct / 100);
+    const currentTotalLoss = currBal < startBal ? (startBal - currBal) : 0;
+    const remMax = Math.max(0, maxTotalLossUsd - currentTotalLoss);
+    const maxUsedPct = Math.min(100, (currentTotalLoss / maxTotalLossUsd) * 100);
+
+    document.getElementById('uiDailyRem').innerText = `$${remDaily.toFixed(0)}`;
+    document.getElementById('barDaily').style.width = `${dailyUsedPct}%`;
+    document.getElementById('barDaily').style.background = dailyUsedPct > 70 ? 'var(--neon-red)' : 'var(--neon-green)';
+
+    document.getElementById('uiMaxRem').innerText = `$${remMax.toFixed(0)}`;
+    document.getElementById('barMax').style.width = `${maxUsedPct}%`;
+    document.getElementById('barMax').style.background = maxUsedPct > 70 ? 'var(--neon-red)' : 'var(--neon-blue)';
+
+    // حسابات الـ Win Rate
+    document.getElementById('totalTradesCount').innerText = `${trades.length} صفقات`;
+    const wins = trades.filter(t => t.pnl > 0).length;
+    const losses = trades.filter(t => t.pnl < 0).length;
+    const winRate = trades.length ? Math.round((wins / trades.length) * 100) : 0;
+    document.getElementById('statWinRate').innerText = `${winRate}%`;
+    document.getElementById('statWL').innerText = `${wins}W / ${losses}L`;
+
+    // Win Rate الالتزام
+    const aPlusTrades = trades.filter(t => t.isGoodTag);
+    const aPlusWins = aPlusTrades.filter(t => t.pnl > 0).length;
+    const aPlusRate = aPlusTrades.length ? Math.round((aPlusWins / aPlusTrades.length) * 100) : 0;
+    document.getElementById('statAPlusRate').innerText = `${aPlusRate}%`;
+
+    // ضريبة العاطفة
+    let emotionLoss = 0;
+    trades.forEach(t => {
+      if (!t.isGoodTag && t.pnl < 0) emotionLoss += Math.abs(t.pnl);
+    });
+    document.getElementById('statEmotionCost').innerText = `-$${emotionLoss.toFixed(0)}`;
+
+    // أفضل جلسة
+    const sessionWins = {};
+    trades.filter(t => t.pnl > 0).forEach(t => {
+      sessionWins[t.session] = (sessionWins[t.session] || 0) + 1;
+    });
+    let bestSess = "غير محدد";
+    let maxW = 0;
+    for (const [s, c] of Object.entries(sessionWins)) {
+      if (c > maxW) { maxW = c; bestSess = s; }
+    }
+    document.getElementById('statBestSession').innerText = bestSess;
+
+    // تعبئة الإعدادات
+    document.getElementById('cfgStartBal').value = startBal;
+    document.getElementById('cfgCurrBal').value = currBal;
+    document.getElementById('cfgDailyDD').value = dailyDDPct;
+    document.getElementById('cfgMaxDD').value = maxDDPct;
+
+    renderTradesList();
+  }
+
+  // حاسبة اللوت التكيفية
+  function calculateLot() {
+    const pair = document.getElementById('calcPair').value;
+    const riskPct = parseFloat(document.getElementById('calcRiskPct').value) || 0;
+    const slPips = parseFloat(document.getElementById('calcSL').value) || 1;
+    const rr = parseFloat(document.getElementById('calcRR').value) || 1;
+
+    const riskUsd = state.currBal * (riskPct / 100);
+    const rewardUsd = riskUsd * rr;
+
+    // قيمة النقطة القياسية لكل 1.00 لوت
+    let pipValuePerStandardLot = 10; // الفوركس والذهب القياسي (10$ لكل حركة 10 سنت/بيب)
+    if (pair === 'INDICES') pipValuePerStandardLot = 1;
+    if (pair === 'BTC') pipValuePerStandardLot = 1;
+
+    let lot = riskUsd / (slPips * pipValuePerStandardLot);
+    lot = Math.max(0.01, Math.round(lot * 100) / 100);
+
+    document.getElementById('resLotSize').innerText = lot.toFixed(2);
+    document.getElementById('resRiskUsd').innerText = `-$${riskUsd.toFixed(0)}`;
+    document.getElementById('resRewardUsd').innerText = `+$${rewardUsd.toFixed(0)}`;
+
+    // التحقق من الـ Daily Drawdown
+    const maxDailyLossUsd = state.startBal * (state.dailyDDPct / 100);
+    const currentDailyLoss = state.todayPnl < 0 ? Math.abs(state.todayPnl) : 0;
+    const remDaily = Math.max(0, maxDailyLossUsd - currentDailyLoss);
+
+    const warnEl = document.getElementById('lotWarning');
+    if (riskUsd >= remDaily) {
+      warnEl.style.display = 'block';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
+  // اختيار طاغ الخطأ أو الانضباط
+  function selectTag(el, name, isGood) {
+    document.querySelectorAll('.tag-chip').forEach(c => {
+      c.className = 'tag-chip';
+    });
+    el.className = isGood ? 'tag-chip selected-good' : 'tag-chip selected-bad';
+    currentTag = { name, isGood };
+  }
+
+  // ضغط وإرفاق صورة الشارت
+  function encodeChartImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 600;
+        const scale = maxW / img.width;
+        canvas.width = maxW;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        tempChartBase64 = canvas.toDataURL('image/jpeg', 0.6);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // حفظ الصفقة
+  function saveTrade() {
+    const pair = document.getElementById('jPair').value;
+    const dir = document.getElementById('jDir').value;
+    const pnl = parseFloat(document.getElementById('jPnl').value);
+    const session = document.getElementById('jSession').value;
+    const notes = document.getElementById('jNotes').value.trim();
+
+    if (isNaN(pnl)) {
+      return alert("⚠️ لازم تدخل نتيجة الصفقة بالدولار (مثال: 80 للربح أو -40 للخسارة)");
+    }
+
+    const newTrade = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('ar-DZ') + ' ' + new Date().toLocaleTimeString('ar-DZ', {hour: '2-digit', minute:'2-digit'}),
+      pair,
+      dir,
+      pnl,
+      session,
+      notes: notes || "بدون ملاحظة صوتية",
+      tag: currentTag.name,
+      isGoodTag: currentTag.isGood,
+      stress: currentStress,
+      chart: tempChartBase64
+    };
+
+    state.trades.unshift(newTrade);
+    state.currBal += pnl;
+    state.todayPnl += pnl;
+
+    // تفريغ الخانات
+    document.getElementById('jPnl').value = '';
+    document.getElementById('jNotes').value = '';
+    document.getElementById('jChartImg').value = '';
+    tempChartBase64 = null;
+    currentStress = "هادي ومتزن 🧘‍♂️";
+    document.getElementById('stressBadge').innerText = '';
+
+    saveState();
+    switchTab('dash', document.querySelectorAll('.nav-item')[0]);
+  }
+
+  function renderTradesList() {
+    const list = document.getElementById('tradesList');
+    list.innerHTML = '';
+    if (state.trades.length === 0) {
+      list.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:12px; padding:16px;">مازال ما سجلت حتى صفقة. ابدأ من قسم 🎙️ تسجيل صفقة.</div>`;
+      return;
+    }
+
+    state.trades.slice(0, 15).forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'trade-item';
+      const pnlColor = t.pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+      const chartHtml = t.chart ? `<img src="${t.chart}" class="chart-thumb" alt="Chart">` : '';
+
+      div.innerHTML = `
+        <div class="trade-top">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pair-badge mono">${t.pair}</span>
+            <span class="${t.dir === 'BUY' ? 'dir-buy' : 'dir-sell'} mono">${t.dir}</span>
+            <span style="font-size:10px; color:var(--muted);">${t.session}</span>
+          </div>
+          <span class="mono" style="font-weight:900; font-size:15px; color:${pnlColor};">${t.pnl >= 0 ? '+' : ''}$${t.pnl}</span>
+        </div>
+        <div class="trade-note">🗣️ "${t.notes}"</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--muted);">
+          <span style="color:${t.isGoodTag ? 'var(--neon-green)' : 'var(--neon-red)'}; font-weight:800;">${t.tag}</span>
+          <span>${t.stress} | ${t.date}</span>
+        </div>
+        ${chartHtml}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function savePropConfig() {
+    state.startBal = parseFloat(document.getElementById('cfgStartBal').value) || 10000;
+    state.currBal = parseFloat(document.getElementById('cfgCurrBal').value) || 10000;
+    state.dailyDDPct = parseFloat(document.getElementById('cfgDailyDD').value) || 5;
+    state.maxDDPct = parseFloat(document.getElementById('cfgMaxDD').value) || 10;
+    saveState();
+    alert("✅ تم تحديث قواعد الحساب الممول!");
+  }
+
+  function resetTodayPnl() {
+    state.todayPnl = 0;
+    saveState();
+  }
+
+  function wipeAllData() {
+    if (confirm("متأكد تحب تمحي جميع الصفقات وتعاود من الصفر؟")) {
+      localStorage.removeItem('apex_trader_state');
+      location.reload();
+    }
+  }
+
+  // ==========================================
+  // 🎙️ الرادار الصوتي + تحليل سرعة النبرة والتوتر
+  // ==========================================
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null;
+  let isRecording = false;
+  let recordStartTime = 0;
+
+  function toggleJournalVoice() {
+    if (!SpeechRecognition) {
+      return alert("افتح التطبيق من Google Chrome باش يمشي التسجيل الصوتي!");
+    }
+    const btn = document.getElementById('journalMicBtn');
+    const status = document.getElementById('voiceStatus');
+
+    if (isRecording) {
+      recognizer.stop();
+      return;
+    }
+
+    recognizer = new SpeechRecognition();
+    recognizer.lang = 'ar-DZ';
+    recognizer.interimResults = false;
+
+    recognizer.onstart = () => {
+      isRecording = true;
+      recordStartTime = Date.now();
+      btn.classList.add('recording');
+      status.innerText = "🎙️ راني نسمع... احكي تفاصيل الصفقة";
+    };
+
+    recognizer.onresult = (e) => {
+      const text = e.results[0][0].transcript.trim();
+      const durationSec = (Date.now() - recordStartTime) / 1000;
+      const wordCount = text.split(/\s+/).length;
+      const wordsPerSec = wordCount / Math.max(1, durationSec);
+
+      // تحليل سرعة الهدرة والكلمات الانفعالية لكشف التوتر
+      const panicWords = /(خفت|طمع|تقلقت|زربت|ستوب|خسرت|انتقام|غلطت|تحرك)/i;
+      if (wordsPerSec > 2.8 || panicWords.test(text)) {
+        currentStress = "⚠️ توتر وانفعال عالي";
+      } else {
+        currentStress = "هادي ومتزن 🧘‍♂️";
+      }
+
+      document.getElementById('stressBadge').innerText = `تحليل النبرة: ${currentStress}`;
+      const notesEl = document.getElementById('jNotes');
+      notesEl.value = (notesEl.value ? notesEl.value + " | " : "") + text;
+
+      // استخراج ذكي للزوج والاتجاه من الصوت
+      if (/(ذهب|غولد|gold)/i.test(text)) document.getElementById('jPair').value = 'XAUUSD';
+      if (/(ناسداك|nasdaq)/i.test(text)) document.getElementById('jPair').value = 'NAS100';
+      if (/(يورو|اورو)/i.test(text)) document.getElementById('jPair').value = 'EURUSD';
+      if (/(شريت|باي|buy|شراء)/i.test(text)) document.getElementById('jDir').value = 'BUY';
+      if (/(بعت|سال|sell|بيع)/i.test(text)) document.getElementById('jDir').value = 'SELL';
+
+      status.innerText = "✅ تم تفريغ الصوت وتحليل الحالة النفسية!";
+    };
+
+    recognizer.onerror = () => {
+      btn.classList.remove('recording');
+      isRecording = false;
+      status.innerText = "❌ ما سمعتكش، عاود كليكي على المايك";
+    };
+
+    recognizer.onend = () => {
+      btn.classList.remove('recording');
+      isRecording = false;
+    };
+
+    recognizer.start();
+  }
+
+  updateUI();
+  calculateLot();
+</script>
+</body>
+</html>
